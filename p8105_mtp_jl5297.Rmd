@@ -40,4 +40,22 @@ We load the data from  “p8105_mtp_data.csv” and use `gather` to go from wide
 * `minute`: Minute of observation
 * `activity_counts`: Electrical signals value in one minute epochs that are a proxy for acceleration
 
+## Total activity analysis
+
+### 1. Total activity trend analysis
+```{r total_activity_trend, message=FALSE}
+activity_df %>% 
+    group_by(week) %>% 
+    summarise(total_activity = sum(activity_counts)) %>% 
+    ggplot(aes(x = week, y = total_activity)) +
+    geom_point() +
+    geom_line() +
+    geom_smooth() +
+    labs(
+        title = "Week Total Activity Counts vs Week",
+        x = "Week",
+        y = "Week total activity counts"
+    )
+```
+We aggregate accross minutes of each week to create a total activity variable and then make a scatterplot of total activity over weeks. While there has been large variability, the total activity has an upward trend over weeks. We can infer that this patient became more active over time. Notably, the total activity counts of the third week is extremely low.
 
