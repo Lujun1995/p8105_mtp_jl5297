@@ -6,6 +6,38 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(patchwork)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  fig.width = 6,
+  out.width = "90%"
+ )
+theme_set(theme_bw() + theme(legend.position = "bottom"))
+options(scipen = 999)
 ```
+
+## Overview
+This document conducts analyses focused on understanding patterns of physical activity of a patient over 47 weeks. The data for this project was collected on a 63 year-old male with BMI 25, who was admitted to the Advanced Cardiac Care Center of Columbia University Medical Center and diagnosed with congestive heart failure. He wore an accelerometerdevice that continuously recorded physical activity for several months.
+
+All analyses in this document are based on data in “p8105_mtp_data.csv”. 
+
+## Data cleaning
+```{r, warning=FALSE, message=FALSE}
+activity_df = read_csv("./data/p8105_mtp_data.csv") %>% 
+    gather(key = minute, value = activity_counts, activity.1:activity.1440) %>%
+    mutate(minute = str_replace(minute, "activity.", ""),
+           day = fct_relevel(day, c("Sunday", "Monday", "Tuesday","Wednesday", "Thursday", "Friday", "Saturday")),
+           minute = as.integer(minute)) %>% 
+    arrange(week, day, minute)
+
+str(activity_df)
+```
+We load the data from  “p8105_mtp_data.csv” and use `gather` to go from wide to long formats. Some variables(`minute` and `day`) are transformed into integer and factor as necessary. There are `r nrow(activity_df)` observations and `r ncol(activity_df)` variables.
+
+* `week`: Week of observation
+* `day`: Day of week
+* `minute`: Minute of observation
+* `activity_counts`: Electrical signals value in one minute epochs that are a proxy for acceleration
+
 
