@@ -8,17 +8,17 @@ output: github_document
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(patchwork)
+library(ggridges)
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  fig.width = 6,
-  out.width = "90%"
+    fig.align = 'center',
+    fig.width = 8
  )
 theme_set(theme_bw() + theme(legend.position = "bottom"))
 options(scipen = 999)
 ```
 
 ## Overview
-This document conducts analyses focused on understanding patterns of physical activity of a patient over 47 weeks. The data for this project was collected on a 63 year-old male with BMI 25, who was admitted to the Advanced Cardiac Care Center of Columbia University Medical Center and diagnosed with congestive heart failure. He wore an accelerometerdevice that continuously recorded physical activity for several months.
+This document conducts analyses focused on understanding patterns of physical activity of a paticipant over 47 weeks. The data for this project was collected on a 63 year-old male with BMI 25, who was admitted to the Advanced Cardiac Care Center of Columbia University Medical Center and diagnosed with congestive heart failure. He wore an accelerometerdevice that continuously recorded physical activity for several months.
 
 All analyses in this document are based on data in “p8105_mtp_data.csv”. 
 
@@ -36,12 +36,27 @@ str(activity_df)
 We load the data from  “p8105_mtp_data.csv” and use `gather` to go from wide to long formats. Some variables(`minute` and `day`) are transformed into integer and factor as necessary. There are `r nrow(activity_df)` observations and `r ncol(activity_df)` variables.
 
 * `week`: Week of observation
-* `day`: Day of week
+* `day`: Day of the week
 * `minute`: Minute of observation
-* `activity_counts`: Electrical signals value in one minute epochs that are a proxy for acceleration
+* `activity_counts`: Voltage signals value in one minute epochs that are a proxy for acceleration
+
+## Exploratory analysis
+```{r}
+activity_df %>% 
+    ggplot(aes(x = activity_counts)) +
+    geom_density()
+
+mean(activity_df$activity_counts)
+range(activity_df$activity_counts)
+IQR(activity_df$activity_counts)
+activity_df %>% 
+    filter(activity_counts > 1) %>% 
+    summarize(mean = mean(activity_counts))
+```
+From the density plot, wen can see the distribution of `activity_counts` is skewed where some points are much larger than the bulk of the data. 
+
 
 ## Total activity analysis
-
 ### 1. Total activity trend analysis
 ```{r total_activity_trend, message=FALSE}
 activity_df %>% 
@@ -57,7 +72,7 @@ activity_df %>%
         y = "Week total activity counts"
     )
 ```
-We aggregate accross minutes of each week to create a total activity variable and then make a scatterplot of total activity over weeks. While there has been large variability, the total activity has an upward trend over weeks. We can infer that this patient became more active over time. Notably, the total activity counts of the third week is extremely low.
+We aggregate accross minutes of each week to create a total activity variable and then make a scatterplot of total activity over weeks. While there has been large variability, the total activity has an upward trend over weeks. We can infer that this paticipant became more active over time. Notably, the total activity counts of the third week is extremely low.
 
 ### 2. The effect of day of the week on total activity
 ```{r day_effect}
@@ -99,3 +114,43 @@ day_total_boxplot + day_total_difference + plot_layout(ncol = 1)
 * In addition to the effect of time: In order to remove the effect of the time, we calculate difference values between day total activity and the mean of day total activity in corresponding week. And then we make boxplots of these difference values of of different days of the week in another panel.    
 
 As ranges of boxplots overlap and their medians are slightly different(both in isolation and in addition to the effect of time), there is no enough evidence that that day of the week affects total activity. But Friday tends to have the largest day total activity among the week.
+
+## Distribution of activity counts by hour
+```{r}
+activity_df %>% 
+    mutate(hour = (minute - 1) %/% 60,
+           activity_counts = log(activity_counts)) %>%
+    ggplot(aes(x = activity_counts, y = factor(hour))) +
+    geom_density_ridges(scale = 4) +
+    geom_vline(xintercept = 0, color = "red") +
+    geom_vline(xintercept = 6, color = "blue") +
+    labs(
+        title = "Density Plot of Log (Activity Counts) by Hour",
+        x = "Log (activity counts)",
+        y = "Hour of the day"
+    ) 
+```
+Because the original distribution is quite skewed, we make a density plot of log(`activity_count`) in the full dataset by hour. From the plot we can see this participant tends to have activities from 8 a. m. to 11 p. m.
+
+## 24-hour activity profiles analysis
+```{r}
+activity_df %>% 
+    ggplot(aes(x = minute / 60, y = activity_counts, group = week, color = week)) +
+    geom_path(alpha = 0.3) +
+    facet_grid(day~.) +
+    scale_colour_gradientn(colours = terrain.colors(10))
+
+activity_df %>%
+    group_by(day, minute) %>% 
+    summarize(activity_counts = mean(activity_counts)) %>% 
+    ggplot(aes(x = minute / 60, y = activity_counts)) +
+    geom_path() +
+    geom_smooth(aes(color = day)) +
+    facet_grid(day~.) 
+
+
+
+
+
+```
+
