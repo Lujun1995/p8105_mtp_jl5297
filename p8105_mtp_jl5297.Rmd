@@ -166,7 +166,7 @@ activity_df %>%
     theme(legend.position = "right")
 ```
 
-We divide weeks into 3 periods and aggregate data into 20-minute epochs. Then we make a plot which shows 24-hour activity profiles for each day in panels defined by period and day of the week. Smooth estimates of each period are emphasized as bold curves.
+We divide weeks into 3 periods and aggregate data into 20-minute epochs. Then we make a plot which shows 24-hour activity profiles for each day in panels defined by day of the week. Smooth estimates of each period are emphasized as bold curves.
 
 * This participant became more active over periods, especially on Friday, Saturday and Sunday. 
 * This participant tended to have high activity around 9 a. m. and 16 p. m. on Sunday.
