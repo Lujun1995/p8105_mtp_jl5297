@@ -1,6 +1,6 @@
 ---
 title: "p8105_mtp_jl5297"
-author: "JunLu"
+author: "Jun Lu"
 date: "10/16/2018"
 output: github_document
 ---
@@ -11,19 +11,22 @@ library(patchwork)
 library(ggridges)
 knitr::opts_chunk$set(
     fig.align = 'center',
-    fig.width = 8
+    fig.width = 6,
+    fig.asp = 0.8,
+    out.width = "80%",
+    message = F
  )
 theme_set(theme_bw() + theme(legend.position = "bottom"))
 options(scipen = 999)
 ```
 
 ## Overview
-This document conducts analyses focused on understanding patterns of physical activity of a paticipant over 47 weeks. The data for this project was collected on a 63 year-old male with BMI 25, who was admitted to the Advanced Cardiac Care Center of Columbia University Medical Center and diagnosed with congestive heart failure. He wore an accelerometerdevice that continuously recorded physical activity for several months.
+This document conducts analyses focused on understanding patterns of physical activity of a participant over 47 weeks. The data for this project was collected on a 63 year-old male with BMI 25, who was admitted to the Advanced Cardiac Care Center of Columbia University Medical Center and diagnosed with congestive heart failure. He wore an accelerometerdevice that continuously recorded physical activity for several months. Our data came from this accelerometerdevice.
 
 All analyses in this document are based on data in “p8105_mtp_data.csv”. 
 
 ## Data cleaning
-```{r, warning=FALSE, message=FALSE}
+```{r}
 activity_df = read_csv("./data/p8105_mtp_data.csv") %>% 
     gather(key = minute, value = activity_counts, activity.1:activity.1440) %>%
     mutate(minute = str_replace(minute, "activity.", ""),
@@ -33,7 +36,7 @@ activity_df = read_csv("./data/p8105_mtp_data.csv") %>%
 
 str(activity_df)
 ```
-We load the data from  “p8105_mtp_data.csv” and use `gather` to go from wide to long formats. Some variables(`minute` and `day`) are transformed into integer and factor as necessary. There are `r nrow(activity_df)` observations and `r ncol(activity_df)` variables.
+We load the data from  “p8105_mtp_data.csv” and use `gather` to go from wide to long formats. Two variables(`minute` and `day`) are transformed into integer and factor as necessary. And we arrange it by week, day and minute. There are `r nrow(activity_df)` observations and `r ncol(activity_df)` variables.
 
 * `week`: Week of observation
 * `day`: Day of the week
@@ -41,19 +44,29 @@ We load the data from  “p8105_mtp_data.csv” and use `gather` to go from wide
 * `activity_counts`: Voltage signals value in one minute epochs that are a proxy for acceleration
 
 ## Exploratory analysis
+### Density plot of activity counts
 ```{r}
 activity_df %>% 
     ggplot(aes(x = activity_counts)) +
-    geom_density()
-
-mean(activity_df$activity_counts)
-range(activity_df$activity_counts)
-IQR(activity_df$activity_counts)
-activity_df %>% 
-    filter(activity_counts > 1) %>% 
-    summarize(mean = mean(activity_counts))
+    geom_density() +
+    labs(
+        title = "Density Plot of Activity Counts",
+        x = "Activity Counts/Minute",
+        y = "Density"
+    )
 ```
-From the density plot, wen can see the distribution of `activity_counts` is skewed where some points are much larger than the bulk of the data. 
+
+* From the density plot, wen can see the distribution of `activity_counts` is extremely skewed where some points are much larger than the bulk of the data. The range of activity counts is (`r range(activity_df$activity_counts)`) and the mean is `r round(mean(activity_df$activity_counts), 2)`. When this participant has no activity, activity counts equal to `r min(activity_df$activity_counts)`
+
+### Find days with no activity 
+```{r}
+activity_df %>% 
+    group_by(week, day) %>% 
+    summarize(total_activity = sum(activity_counts)) %>%  
+    filter(total_activity == 1440) 
+```
+
+* We find that there are 18 days that activity counts shows no activity. Those days are mainly in week 3, 4 and 12.
 
 
 ## Total activity analysis
@@ -69,10 +82,10 @@ activity_df %>%
     labs(
         title = "Week Total Activity Counts vs Week",
         x = "Week",
-        y = "Week total activity counts"
+        y = "Week Total Activity Counts"
     )
 ```
-We aggregate accross minutes of each week to create a total activity variable and then make a scatterplot of total activity over weeks. While there has been large variability, the total activity has an upward trend over weeks. We can infer that this paticipant became more active over time. Notably, the total activity counts of the third week is extremely low.
+We aggregate accross minutes of each week to create a total activity variable and then make a scatterplot of total activity over weeks. While there has been large variability, the total activity has an upward trend over weeks. We can infer that this participant became more active over time. 
 
 ### 2. The effect of day of the week on total activity
 ```{r day_effect}
@@ -88,8 +101,8 @@ day_total_boxplot =
     theme(legend.position = "right") +
     labs(
         title = "Day Total Activity for Different Days of the Week",
-        x = "Day of the week",
-        y = "Day total activity"
+        x = "Day of the Week",
+        y = "Day Total Activity Counts"
     )
 
 
@@ -102,7 +115,7 @@ day_total_difference =
     theme(legend.position = "right") +
     labs(
         title = "Difference Values for Different Days of the Week",
-        x = "Day of the week",
+        x = "Day of the Week",
         y = "Difference Values"
     )
     
@@ -111,9 +124,9 @@ day_total_boxplot + day_total_difference + plot_layout(ncol = 1)
 
 * We aggregate accross minutes of each day to create a day total activity variable. 
 * In isolation: We make boxplots of total activity of different days of the week to examine the possibility that day of the week affects activity. 
-* In addition to the effect of time: In order to remove the effect of the time, we calculate difference values between day total activity and the mean of day total activity in corresponding week. And then we make boxplots of these difference values of of different days of the week in another panel.    
+* In addition to the effect of time: In order to remove the effect of the time, we calculate difference values between day total activity and the mean of day total activity of the week(day total activity - the mean of day total activity of the week). And then we make boxplots of these difference values of of different days of the week in another panel.    
 
-As ranges of boxplots overlap and their medians are slightly different(both in isolation and in addition to the effect of time), there is no enough evidence that that day of the week affects total activity. But Friday tends to have the largest day total activity among the week.
+As ranges of boxplots overlap and their medians are only slightly different(both in isolation and in addition to the effect of time), there is no enough evidence that that day of the week affects total activity.
 
 ## Distribution of activity counts by hour
 ```{r}
@@ -130,27 +143,33 @@ activity_df %>%
         y = "Hour of the day"
     ) 
 ```
-Because the original distribution is quite skewed, we make a density plot of log(`activity_count`) in the full dataset by hour. From the plot we can see this participant tends to have activities from 8 a. m. to 11 p. m.
+
+Because the original distribution is quite skewed, we make a density plot of log(activity counts) in the full dataset by hour. From the plot we can see this participant tends to have activity from 7 a. m. to 10 p. m.
 
 ## 24-hour activity profiles analysis
-```{r}
+```{r 24-hour, fig.width=8, fig.asp = 0.9}
 activity_df %>% 
-    ggplot(aes(x = minute / 60, y = activity_counts, group = week, color = week)) +
-    geom_path(alpha = 0.3) +
-    facet_grid(day~.) +
-    scale_colour_gradientn(colours = terrain.colors(10))
-
-activity_df %>%
-    group_by(day, minute) %>% 
-    summarize(activity_counts = mean(activity_counts)) %>% 
-    ggplot(aes(x = minute / 60, y = activity_counts)) +
-    geom_path() +
-    geom_smooth(aes(color = day)) +
-    facet_grid(day~.) 
-
-
-
-
-
+    mutate(period = week %/% 16,
+           period = factor(period, levels = c(0, 1, 2), labels = c("1-15 weeks", "16-31 weeks", "32-47 weeks")),
+           time = minute %/% 20 * 20 / 60) %>% 
+    group_by(period, week, day, time) %>% 
+    summarize(activity_counts = sum(activity_counts)) %>% 
+    ggplot(aes(x = time, y = activity_counts, color = week)) +
+    viridis::scale_color_viridis() +
+    geom_line(aes(group = week), size = 0.1) +
+    facet_grid(period ~ day) +
+    geom_smooth(size = 0.5, color = "red") +
+    scale_x_continuous(breaks = seq(0, 24, by = 6)) +
+    labs(
+        title = "24-Hour Activity Profiles for Each Day",
+        x = "Hour of the Day",
+        y = "Activity Counts/ 20 Minutes"
+    )
 ```
+We divide weeks into 3 periods(1-15, 16-31, 32-47 weeks) to show the effect of the time. And we aggregate data into 20-minute epochs to make plots more clear. Then we make a polt which shows 24-hour activity profiles for each day. In this plot, we use `facet_grid`  to form a matrix of panels defined by period and day of the week. Smooth estimates of mean activity profiles of each panel are emphasized as red bold curves.
+
+From this plot, we find that:
+
+* On Sunday, this participant tends to have high activity around 9 a. m. and 16 p. m.
+* On Friday, this participant tends to have high activity around 8 p. m.
 
