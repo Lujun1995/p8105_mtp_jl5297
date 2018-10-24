@@ -90,7 +90,7 @@ activity_df %>%
 We aggregate accross minutes of each week to create a total activity variable and then make a scatterplot of total activity over weeks. While there has been large variability, the total activity has an upward trend over weeks. We can infer that this participant became more active over time. 
 
 ### The effect of day of the week on total activity
-```{r day_effect, fig.width=8, fig.asp = 0.8}
+```{r day_effect, fig.width=8, fig.asp = 0.8, fig.align = 'center'}
 day_total_acitivity = 
     activity_df %>% 
     group_by(week, day) %>%
@@ -147,10 +147,11 @@ activity_df %>%
         y = "Hour of the Day"
     ) 
 ```
+
 We make a density plot of log(activity counts) by hour. We can see this participant tends to have activity from 7:00 to 22:00.
 
 ## 24-hour activity profiles analysis
-```{r 24-hour, fig.width=9, fig.asp = 0.9}
+```{r 24-hour, fig.width=9, fig.asp = 0.9, fig.align = 'center'}
 activity_df %>% 
     mutate(period = week %/% 16,
            period = factor(period, levels = c(0, 1, 2), labels = c("1-15 weeks", "16-31 weeks", "32-47 weeks")),
