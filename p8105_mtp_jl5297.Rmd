@@ -110,6 +110,7 @@ day_total_activity_df %>%
         y = "Day Total Activity Counts"
     )
 ```
+
 However if we consider the effect of the time, we can see the smooth estimates of day total activity of each day accorss weeks are quite different. For example, from week 30 to 40, this participant tended to have higher day total activity on Saturday.
 
 ## Distribution of log(activity counts) by hour
